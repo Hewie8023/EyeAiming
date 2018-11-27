@@ -14,7 +14,7 @@ ShowCal::ShowCal(QWidget *parent) :
     ui->horizontalLayout->addWidget(sceneLabel);
     ui->horizontalLayout->addWidget(eyeLabel);
     sceneLabel->installEventFilter(this);
-    connect(sceneLabel, SIGNAL(clicked()), this, SLOT(updateImage()));
+    //connect(sceneLabel, SIGNAL(clicked()), this, SLOT(updateImage()));
     connect(ui->nextButton, SIGNAL(clicked()), this, SLOT(clicknextButton()));
     connect(ui->computeButton, SIGNAL(clicked()), this, SLOT(clickcomputeButton()));
 }
@@ -54,12 +54,13 @@ void ShowCal::updateImage()
         params.Radius_Max = 10;
         params.Radius_Min = 8;
         params.Pupil_center = Point2f(0, 0);
+        params.Corneal_center=Point2f(0,0);
         findPupilEllipse(proc, params);
 
-        CCircle_detector::compute_ellipse(eyeImage, in, params.Pupil_center);
+        CCircle_detector::compute_ellipse(eyeImage, in, params.Pupil_center,params.Corneal_center);
 
-        vectors[m_CalNum].x = params.Pupil_center.x - 320;
-        vectors[m_CalNum].y = params.Pupil_center.y - 240;
+        vectors[m_CalNum].x = params.Pupil_center.x - params.Corneal_center.x;
+        vectors[m_CalNum].y = params.Pupil_center.y - params.Corneal_center.y;
         cvtColor(sceneImage,sceneImage,CV_BGR2RGB);
         cvtColor(eyeImage,eyeImage,CV_BGR2RGB);
         this->update();

@@ -20,6 +20,7 @@ struct TrackerParams
 	int Radius_Min;
 	int Radius_Max;
 	cv::Point2f Pupil_center;
+    cv::Point2f Corneal_center;
 };
 
 bool findPupilEllipse(const cv::Mat &m,TrackerParams &params);

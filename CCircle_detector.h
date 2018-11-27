@@ -61,9 +61,9 @@ public:
 	void starburst_circle_contour_detection(unsigned char* pupil_image, int width, int height, int edge_thresh, int N, int minimum_cadidate_features, double cx, double cy, int widthStep);//这里对edge_thresh是有操作的
 	void pupil_fitting_inliers(unsigned char* pupil_image, int, int, int &return_max_inliers);
 
-	void Draw_Cross(IplImage *image, int centerx, int centery, int x_cross_length, int y_cross_length, CvScalar color);
+    static void Draw_Cross(IplImage *image, int centerx, int centery, int x_cross_length, int y_cross_length, CvScalar color);
 
-    static void compute_ellipse(cv::Mat &InImage, double* in, cv::Point2f &center);
+    static void compute_ellipse(cv::Mat &InImage, double* in, cv::Point2f &center,cv::Point2f &corneal_center);
 };
 
 #endif

@@ -1,5 +1,5 @@
 #include "CCircle_detector.h"
-
+#include "ccorneal.h"
 #ifdef _DEBUG
 #undef THIS_FILE
 static char THIS_FILE[] = __FILE__;
@@ -8,10 +8,10 @@ static char THIS_FILE[] = __FILE__;
 
 CCircle_detector::CCircle_detector()
 {
-	edge_threshold = 50;		//threshold of pupil edge points detection
-	rays = 20;				//number of rays to use to detect feature points
-	min_feature_candidates = 10;
-	PupilWindowSize = 151;  //我自己添加的窗口大小401
+    edge_threshold = 50;		//threshold of pupil edge points detection
+    rays = 30;				//number of rays to use to detect feature points
+    min_feature_candidates = 20;
+    PupilWindowSize = 201;  //我自己添加的窗口大小401
 	//height_window = 401;  
 	//width_window = 401;
 	for (int i = 0; i < 5; i++)
@@ -399,7 +399,7 @@ void CCircle_detector::pupil_fitting_inliers(unsigned char* pupil_image, int wid
 	double ratio;
 
 
-	srand(0);//设置随机数发生器
+    //srand(0);//设置随机数发生器
 	//大循环从这里开始
 	while (sample_num > ransac_count)
 	{
@@ -540,13 +540,13 @@ void CCircle_detector::Draw_Cross(IplImage *image, int centerx, int centery, int
 }
 
 
-void CCircle_detector::compute_ellipse(cv::Mat &InImage, double* in, cv::Point2f &center)
+void CCircle_detector::compute_ellipse(cv::Mat &InImage, double* in, cv::Point2f &center,cv::Point2f &corneal_center)
 {
     clock_t start = clock();
     char param_str[256];
-    cv::Mat &temp = InImage;
-    IplImage *rgbI = &IplImage(temp);
-    IplImage *image = cvCreateImage(cvGetSize(rgbI), IPL_DEPTH_8U, 1);//单通道处理
+    IplImage *rgbI = &IplImage(InImage);
+    IplImage * image = cvCreateImage(cvGetSize(rgbI), IPL_DEPTH_8U, 1);//单通道处理
+    IplImage *threshold_image=cvCreateImage(cvGetSize(rgbI), IPL_DEPTH_8U, 1);//
     if (InImage.channels() == 3)
     {
         cvCvtColor(rgbI, image, CV_BGR2GRAY);
@@ -557,7 +557,16 @@ void CCircle_detector::compute_ellipse(cv::Mat &InImage, double* in, cv::Point2f
     }
     cvSmooth(image, image, CV_GAUSSIAN, 5, 5);
 
+
+    CCorneal CorImage;
     CCircle_detector inner_circle;
+    CorImage.remove_corneal_reflection(image, threshold_image, center.x, center.y,
+            (int)image->height/10, CorImage.corneal_reflection.x, CorImage.corneal_reflection.y, CorImage.corneal_reflection_r);
+
+    Draw_Cross(rgbI, CorImage.corneal_reflection.x, CorImage.corneal_reflection.y, 5, 5, CV_RGB(0,255,0));
+    corneal_center.x=CorImage.corneal_reflection.x;
+    corneal_center.y=CorImage.corneal_reflection.y;
+
     if (center.x == 0)
     {
         inner_circle.starburst_circle_contour_detection((unsigned char*)image->imageData, image->width, image->height,
@@ -582,7 +591,7 @@ void CCircle_detector::compute_ellipse(cv::Mat &InImage, double* in, cv::Point2f
         //cout << "inner_circle=" << pupil.x << " " << pupil.y << " " << ellipse_axis.width << " " << ellipse_axis.height << " " << inner_circle.circle_param[4] << endl;
         CvScalar Red = CV_RGB(255, 0, 0);
         cvEllipse(rgbI, pupil, ellipse_axis, -inner_circle.circle_param[4] * 180 / PI, 0, 360, Red, 1);
-        inner_circle.Draw_Cross(rgbI, pupil.x, pupil.y, 5, 5, Red);
+        Draw_Cross(rgbI, pupil.x, pupil.y, 5, 5, Red);
         //sprintf(param_str, "x=%.2f y=%.2f a=%.2f b=%.2f theta=%.6f", inner_circle.circle_param[2], inner_circle.circle_param[3], inner_circle.circle_param[0], inner_circle.circle_param[1], inner_circle.circle_param[4]);
         //std::string innerString("inner:");
         //innerString += param_str;
@@ -597,10 +606,9 @@ void CCircle_detector::compute_ellipse(cv::Mat &InImage, double* in, cv::Point2f
         {
             in[i] = inner_circle.circle_param[i];
         }
-        center.x = pupil.x;
-        center.y = pupil.y;
+        center.x=pupil.x;
+        center.y=pupil.y;
     }
-
     rgbI = NULL;
     cvReleaseImage(&image);
 }

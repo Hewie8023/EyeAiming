@@ -24,11 +24,12 @@ MainWindow::MainWindow(QWidget *parent) :
     {
         sceneImage= Mat::zeros(sceneCap.get(CV_CAP_PROP_FRAME_HEIGHT), sceneCap.get(CV_CAP_PROP_FRAME_WIDTH), CV_8UC3);
         eyeImage = Mat::zeros(eyeCap.get(CV_CAP_PROP_FRAME_HEIGHT), eyeCap.get(CV_CAP_PROP_FRAME_WIDTH), CV_8UC3);
-        theTimer.start(5);
+        theTimer.start(20);
     }
     else{
         //exit(0);
     }
+    gaze=Point2f(320.0,240.0);
     sceneLabel = new QLabel(this);
     eyeLabel = new QLabel(this);
     ui->horizontalLayout->addWidget(sceneLabel);
@@ -79,28 +80,35 @@ void MainWindow::updateImage()
     eyeCap>>eyeImage;
     if(sceneImage.data && eyeImage.data)
     {
+        flip(sceneImage,sceneImage,0);//1代表水平方向旋转180度
         orig_eye = eyeImage.clone();
-        flip(sceneImage,sceneImage,0);
         Mat proc;
+        //clock_t start=clock();
         cv::resize(eyeImage, proc, Size(0, 0), 0.2, 0.2, 1);
         TrackerParams params;
         params.Radius_Max = 10;
         params.Radius_Min = 8;
         params.Pupil_center = Point2f(0, 0);
-        findPupilEllipse(proc, params);
-        CCircle_detector::compute_ellipse(eyeImage, in, params.Pupil_center);
-        eyeVector.x = params.Pupil_center.x - 320;
-        eyeVector.y = params.Pupil_center.y - 240;
+        params.Corneal_center=Point2f(0,0);
 
-        gaze = Homography_map_point(eyeVector,map_matrix);
-        if(IsInRightPosition(gaze,lastGaze)){
-            gaze.x = lastGaze.x*0.80+gaze.x*0.20;
-            gaze.y = lastGaze.y*0.80+gaze.y*0.20;
-        }else{
-            lastGaze.x = gaze.x;
-            lastGaze.y = gaze.y;
+        findPupilEllipse(proc, params);
+        CCircle_detector::compute_ellipse(eyeImage, in, params.Pupil_center,params.Corneal_center);
+        eyeVector.x = params.Pupil_center.x - params.Corneal_center.x;
+        eyeVector.y = params.Pupil_center.y - params.Corneal_center.y;
+
+        Point2f curr=Homography_map_point(eyeVector,map_matrix);
+        if(((curr.x - gaze.x)*(curr.x - gaze.x) + (curr.y - gaze.y)*(curr.y - gaze.y) < 20*20))
+        {
+            gaze.x=gaze.x*0.8+curr.x*0.2;
+            gaze.y=gaze.y*0.8+curr.y*0.2;
+        }
+        else
+        {
+            gaze.x=curr.x;
+            gaze.y=curr.y;
         }
         cv::circle(sceneImage,gaze,5,CV_RGB(0,255,0),-1);
+        //std::cout << double(clock() - start)<< std::endl;
         cvtColor(sceneImage,sceneImage,CV_BGR2RGB);
         cvtColor(eyeImage,eyeImage,CV_BGR2RGB);
         this->update();
@@ -146,11 +154,4 @@ CvPoint2D32f  MainWindow::Homography_map_point(CvPoint2D32f  p,double map_matrix
     return p2;
 }
 
-bool MainWindow::IsInRightPosition(CvPoint2D32f gaze, CvPoint2D32f lastGaze){
-    bool flag = false;
-    if(!((lastGaze.x - gaze.x)*(lastGaze.x - gaze.x) + (lastGaze.y - gaze.y)*(lastGaze.y - gaze.y) > 30*30)){
-        flag = true;
-    }
-    return flag;
-}
 
