@@ -610,5 +610,6 @@ void CCircle_detector::compute_ellipse(cv::Mat &InImage, double* in, cv::Point2f
         center.y=pupil.y;
     }
     rgbI = NULL;
+    cvReleaseImage(&threshold_image);
     cvReleaseImage(&image);
 }

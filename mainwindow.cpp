@@ -93,8 +93,8 @@ void MainWindow::updateImage()
 
         findPupilEllipse(proc, params);
         CCircle_detector::compute_ellipse(eyeImage, in, params.Pupil_center,params.Corneal_center);
-        eyeVector.x = params.Pupil_center.x - params.Corneal_center.x;
-        eyeVector.y = params.Pupil_center.y - params.Corneal_center.y;
+        eyeVector.x = params.Pupil_center.x - 320;//params.Corneal_center.x;
+        eyeVector.y = params.Pupil_center.y - 240;//params.Corneal_center.y;
 
         Point2f curr=Homography_map_point(eyeVector,map_matrix);
         if(((curr.x - gaze.x)*(curr.x - gaze.x) + (curr.y - gaze.y)*(curr.y - gaze.y) < 20*20))

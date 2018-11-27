@@ -30,7 +30,8 @@ SOURCES += \
     PupilTracker.cpp \
     mainwindow.cpp \
     cdocalibration.cpp \
-    showcal.cpp
+    showcal.cpp \
+    ccorneal.cpp
 
 HEADERS += \
     svd.h \
@@ -39,7 +40,8 @@ HEADERS += \
     mainwindow.h \
     cdocalibration.h \
     showcal.h \
-    util.h
+    util.h \
+    ccorneal.h
 
 FORMS += \
     mainwindow.ui \
